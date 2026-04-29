@@ -5,9 +5,6 @@ import com.itextpdf.html2pdf.HtmlConverter
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
-import nl.siegmann.epublib.domain.Book
-import nl.siegmann.epublib.domain.Resource
-import nl.siegmann.epublib.epub.EpubWriter
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -30,7 +27,6 @@ object Writers {
             DocFormat.TXT  -> writeTxt(ir, outFile)
             DocFormat.MD   -> writeMd(ir, outFile)
             DocFormat.HTML -> writeHtml(ir, outFile)
-            DocFormat.EPUB -> writeEpub(ir, outFile)
             DocFormat.PDF  -> writePdf(ir, outFile)
             DocFormat.XLSX -> writeXlsx(ir, outFile, ooxml = true)
             DocFormat.XLS  -> writeXlsx(ir, outFile, ooxml = false)
@@ -276,35 +272,6 @@ object Writers {
         }
     }
 
-    // ── EPUB ─────────────────────────────────────────────
-    private fun writeEpub(ir: IRDoc, outFile: File) {
-        val book = Book()
-        book.metadata.addTitle(ir.title ?: "Документ")
-        // Группируем блоки по PageBreak в главы.
-        val chapters = mutableListOf<List<IRBlock>>()
-        var current = mutableListOf<IRBlock>()
-        ir.blocks.forEach { b ->
-            if (b is IRBlock.PageBreak) {
-                if (current.isNotEmpty()) { chapters.add(current); current = mutableListOf() }
-            } else current.add(b)
-        }
-        if (current.isNotEmpty()) chapters.add(current)
-        if (chapters.isEmpty()) chapters.add(listOf(IRBlock.Paragraph(listOf(IRRun("(пусто)")))))
-        chapters.forEachIndexed { idx, blocks ->
-            val title = (blocks.firstOrNull { it is IRBlock.Heading } as? IRBlock.Heading)?.text ?: "Глава ${idx+1}"
-            val html = StringBuilder().apply {
-                append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-                append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">")
-                append("<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>")
-                append(esc(title)); append("</title></head><body>")
-                blocks.forEach { append(blockToHtml(it)) }
-                append("</body></html>")
-            }.toString()
-            val res = Resource(html.toByteArray(Charsets.UTF_8), "chapter${idx+1}.xhtml")
-            book.addSection(title, res)
-        }
-        FileOutputStream(outFile).use { EpubWriter().write(book, it) }
-    }
 
     // ── XLSX/XLS ─────────────────────────────────────────
     private fun writeXlsx(ir: IRDoc, outFile: File, ooxml: Boolean) {

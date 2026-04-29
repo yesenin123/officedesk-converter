@@ -6,7 +6,6 @@ import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
-import nl.siegmann.epublib.epub.EpubReader
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.extractor.WordExtractor
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
@@ -32,7 +31,6 @@ object Readers {
                 DocFormat.TXT  -> readTxt(input)
                 DocFormat.MD   -> readMd(input)
                 DocFormat.HTML -> readHtml(input)
-                DocFormat.EPUB -> readEpub(input)
                 DocFormat.PDF  -> readPdf(input)
                 DocFormat.XLSX -> readXlsx(input)
                 DocFormat.XLS  -> readXls(input)
@@ -267,20 +265,6 @@ object Readers {
         return runs
     }
 
-    // ── EPUB ─────────────────────────────────────────────
-    private fun readEpub(input: InputStream): IRDoc {
-        val book = EpubReader().readEpub(input)
-        val blocks = mutableListOf<IRBlock>()
-        book.contents.forEach { res ->
-            try {
-                val html = res.inputStream.bufferedReader().readText()
-                val sub = readHtmlString(html)
-                blocks.addAll(sub.blocks)
-                blocks.add(IRBlock.PageBreak)
-            } catch (_: Throwable) { /* пропустить главу */ }
-        }
-        return IRDoc(title = book.title, blocks = blocks)
-    }
 
     // ── PDF ──────────────────────────────────────────────
     private fun readPdf(input: InputStream): IRDoc {

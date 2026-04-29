@@ -18,7 +18,6 @@ enum class DocFormat(
     TXT ("txt",  "Plain Text",   "text/plain", true, true),
     PDF ("pdf",  "PDF",          "application/pdf", true, true),
     HTML("html", "Web Page",     "text/html", true, true),
-    EPUB("epub", "eBook",        "application/epub+zip", true, true),
     MD  ("md",   "Markdown",     "text/markdown", true, true),
     XLSX("xlsx", "Excel Workbook","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", true, true),
     XLS ("xls",  "Excel 97–2003","application/vnd.ms-excel", true, true);
