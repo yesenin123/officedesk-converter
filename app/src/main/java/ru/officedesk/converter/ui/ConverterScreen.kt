@@ -101,7 +101,6 @@ fun ConverterScreen(vm: ConverterVM, onOpenHistory: () -> Unit, onOpenAbout: () 
                         "application/vnd.ms-excel",
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         "application/pdf",
-                        "application/epub+zip",
                         "*/*",
                     )) },
                     onClear = { vm.reset() }
@@ -197,7 +196,7 @@ private fun Dropzone(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(2.dp))
-                Text("Word, PDF, EPUB, TXT и другие",
+                Text("Word, PDF, TXT и другие",
                     color = Palette.inkMute, fontSize = 12.sp)
             }
         } else {
@@ -353,7 +352,7 @@ private fun ActionRow(
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val mime = state.outputFormat.mime
-                    if (state.outputFormat in listOf(DocFormat.PDF, DocFormat.EPUB, DocFormat.TXT, DocFormat.HTML)) {
+                    if (state.outputFormat in listOf(DocFormat.PDF, DocFormat.TXT, DocFormat.HTML)) {
                         FilledTonalButton(
                             onClick = { onOpenInReader(state.outputUri, mime) },
                             modifier = Modifier.weight(1f),
@@ -451,7 +450,7 @@ private fun ReaderHint(ctx: android.content.Context) {
                 )
                 Text(
                     if (installed) "Кнопка «В читалке» появится после конвертации"
-                    else "Совместима с PDF, EPUB и TXT",
+                    else "Совместима с PDF и TXT",
                     color = Palette.inkMute, fontSize = 12.sp
                 )
             }
@@ -491,7 +490,6 @@ internal fun formatColor(f: DocFormat): Color = when (f) {
     DocFormat.TXT -> Color(0xFF6B6258)
     DocFormat.PDF -> Color(0xFFA8362B)
     DocFormat.HTML -> Color(0xFFC46A3D)
-    DocFormat.EPUB -> Color(0xFF5B8A3A)
     DocFormat.MD -> Color(0xFF3A3A3A)
     DocFormat.XLSX, DocFormat.XLS -> Color(0xFF216F3D)
 }
