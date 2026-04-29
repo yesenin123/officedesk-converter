@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FBF6EC"/>
+      <stop offset="100%" stop-color="#EFE7D3"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFAF0"/>
+      <stop offset="100%" stop-color="#F4ECD8"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dx="0" dy="6"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.25"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <!-- скотч слева -->
+  <rect x="-30" y="60" width="220" height="42" fill="#B8884A" opacity="0.6" transform="rotate(-3)"/>
+
+  <!-- левая часть: текст -->
+  <g transform="translate(120, 200)">
+    <text font-family="JetBrains Mono, monospace" font-size="22"
+          fill="#8A5F2C" letter-spacing="6">OFFICEDESK · RU</text>
+
+    <text y="100" font-family="Georgia, serif" font-size="92"
+          font-weight="600" fill="#2A2724">Word, PDF, EPUB</text>
+    <text y="200" font-family="Georgia, serif" font-size="92"
+          font-weight="600" fill="#2A2724">в любой формат</text>
+
+    <text y="270" font-family="Georgia, serif" font-size="32"
+          fill="#55504a" font-style="italic">— и обратно. Локально, бесплатно, без сети.</text>
+
+    <!-- список -->
+    <g transform="translate(0, 350)" font-family="Georgia, serif" font-size="32" fill="#2A2724">
+      <g>
+        <circle cx="16" cy="16" r="16" fill="#7A8A4A"/>
+        <path d="M8,16 L14,22 L24,10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="50" y="24">DOCX, DOC, PDF, RTF, ODT, EPUB</text>
+      </g>
+      <g transform="translate(0, 60)">
+        <circle cx="16" cy="16" r="16" fill="#7A8A4A"/>
+        <path d="M8,16 L14,22 L24,10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="50" y="24">TXT, HTML, Markdown, XLSX</text>
+      </g>
+      <g transform="translate(0, 120)">
+        <circle cx="16" cy="16" r="16" fill="#7A8A4A"/>
+        <path d="M8,16 L14,22 L24,10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="50" y="24">Файлы не покидают устройство</text>
+      </g>
+    </g>
+
+    <!-- CTA -->
+    <g transform="translate(0, 620)">
+      <rect width="420" height="90" rx="8" fill="#2A2724"/>
+      <text x="210" y="60" text-anchor="middle" font-family="Georgia, serif"
+            font-size="36" fill="white" font-weight="600">Скачать в RuStore</text>
+    </g>
+  </g>
+
+  <!-- правая часть: визуал документов -->
+  <g transform="translate(1140, 240)" filter="url(#shadow)">
+    <!-- DOCX -->
+    <g transform="translate(0, 50) rotate(-4)">
+      <path d="M0,0 L260,0 L320,60 L320,440 L0,440 Z"
+            fill="url(#paper)" stroke="#C8B896" stroke-width="2"/>
+      <path d="M260,0 L260,60 L320,60 Z" fill="#E2D6BD"/>
+      <rect x="0" y="390" width="320" height="50" fill="#1A4480"/>
+      <text x="160" y="425" text-anchor="middle"
+            font-family="JetBrains Mono, monospace"
+            font-size="36" fill="white" font-weight="700">DOCX</text>
+      <g opacity="0.25" stroke="#1A4480" stroke-width="3" stroke-linecap="round">
+        <line x1="30" y1="100" x2="280" y2="100"/>
+        <line x1="30" y1="140" x2="240" y2="140"/>
+        <line x1="30" y1="180" x2="280" y2="180"/>
+        <line x1="30" y1="220" x2="200" y2="220"/>
+        <line x1="30" y1="260" x2="270" y2="260"/>
+        <line x1="30" y1="300" x2="220" y2="300"/>
+      </g>
+    </g>
+
+    <!-- стрелка -->
+    <g transform="translate(370, 270)">
+      <circle cx="0" cy="0" r="56" fill="#2A2724"/>
+      <path d="M-28,0 L28,0 M12,-18 L28,0 L12,18"
+            stroke="white" stroke-width="6" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- PDF -->
+    <g transform="translate(440, 50) rotate(3)">
+      <path d="M0,0 L260,0 L320,60 L320,440 L0,440 Z"
+            fill="url(#paper)" stroke="#C8B896" stroke-width="2"/>
+      <path d="M260,0 L260,60 L320,60 Z" fill="#E2D6BD"/>
+      <rect x="0" y="390" width="320" height="50" fill="#A8362B"/>
+      <text x="160" y="425" text-anchor="middle"
+            font-family="JetBrains Mono, monospace"
+            font-size="36" fill="white" font-weight="700">PDF</text>
+      <g opacity="0.25" stroke="#A8362B" stroke-width="3" stroke-linecap="round">
+        <line x1="30" y1="100" x2="280" y2="100"/>
+        <line x1="30" y1="140" x2="240" y2="140"/>
+        <line x1="30" y1="180" x2="280" y2="180"/>
+        <line x1="30" y1="220" x2="200" y2="220"/>
+      </g>
+      <g transform="translate(220, 290) rotate(-12)">
+        <circle r="50" fill="none" stroke="#A8362B" stroke-width="4" opacity="0.6"/>
+        <text text-anchor="middle" y="-4"
+              font-family="JetBrains Mono, monospace" font-size="14"
+              fill="#A8362B" font-weight="700" opacity="0.7">ГОТОВО</text>
+      </g>
+    </g>
+  </g>
+
+  <text x="960" y="1040" text-anchor="middle" font-family="JetBrains Mono, monospace"
+        font-size="20" fill="#8A8175" letter-spacing="2">officedesk.ru · 0+ · работает офлайн</text>
+</svg>
