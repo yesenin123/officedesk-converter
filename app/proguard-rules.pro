@@ -13,6 +13,10 @@
 -dontwarn com.sun.**
 -dontwarn org.osgi.**
 
+# JSoup и Log4j annotations
+-dontwarn javax.annotation.**
+-dontwarn aQute.bnd.annotation.spi.**
+
 -keep class org.apache.poi.** { *; }
 -keep class org.apache.xmlbeans.** { *; }
 -keep class org.openxmlformats.** { *; }
