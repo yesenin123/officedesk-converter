@@ -41,6 +41,52 @@ fun getSupportedOutputFormats(inputFormat: DocFormat): List<DocFormat> = when (i
     DocFormat.XLSX -> listOf(DocFormat.XLSX, DocFormat.XLS, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT)
     DocFormat.XLS -> listOf(DocFormat.XLS, DocFormat.XLSX, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT)
 }
+@Composable
+fun FormatGrid(
+    formats: List<DocFormat>,
+    selected: DocFormat?,
+    disabled: DocFormat?,
+    onPick: (DocFormat) -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        formats.forEach { fmt ->
+            FormatBadge(
+                format = fmt,
+                selected = fmt == selected,
+                disabled = disabled,
+                onClick = { onPick(fmt) }
+            )
+        }
+    }
+}
+
+@Composable
+fun FormatBadge(
+    format: DocFormat,
+    selected: Boolean,
+    disabled: DocFormat?,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = if (selected) Palette.ink else if (disabled == format) Palette.paper2 else Color.White,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, if (selected) Palette.ink else Palette.rule),
+        modifier = Modifier
+            .clickable(enabled = disabled != format) { onClick() }
+            .padding(4.dp)
+    ) {
+        Text(
+            format.ext.uppercase(),
+            modifier = Modifier.padding(8.dp, 6.dp),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) Color.White else Palette.ink
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
