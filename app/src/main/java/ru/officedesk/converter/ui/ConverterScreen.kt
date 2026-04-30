@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +28,20 @@ import ru.officedesk.converter.DocFormat
 import ru.officedesk.converter.JobState
 import ru.officedesk.converter.Sharing
 
+// Матрица конвертации: какие форматы безопасно конвертировать
+fun getSupportedOutputFormats(inputFormat: DocFormat): List<DocFormat> = when (inputFormat) {
+    DocFormat.DOCX -> listOf(DocFormat.DOCX, DocFormat.DOC, DocFormat.RTF, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT, DocFormat.MD)
+    DocFormat.DOC -> listOf(DocFormat.DOC, DocFormat.DOCX, DocFormat.RTF, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT, DocFormat.MD)
+    DocFormat.RTF -> listOf(DocFormat.RTF, DocFormat.DOCX, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT, DocFormat.MD)
+    DocFormat.ODT -> listOf(DocFormat.ODT, DocFormat.DOCX, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT, DocFormat.MD)
+    DocFormat.TXT -> listOf(DocFormat.TXT, DocFormat.DOCX, DocFormat.PDF, DocFormat.HTML, DocFormat.MD)
+    DocFormat.MD -> listOf(DocFormat.MD, DocFormat.DOCX, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT)
+    DocFormat.HTML -> listOf(DocFormat.HTML, DocFormat.DOCX, DocFormat.PDF, DocFormat.TXT, DocFormat.MD)
+    DocFormat.PDF -> listOf(DocFormat.PDF, DocFormat.TXT, DocFormat.HTML, DocFormat.MD)
+    DocFormat.XLSX -> listOf(DocFormat.XLSX, DocFormat.XLS, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT)
+    DocFormat.XLS -> listOf(DocFormat.XLS, DocFormat.XLSX, DocFormat.PDF, DocFormat.HTML, DocFormat.TXT)
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConverterScreen(vm: ConverterVM, onOpenHistory: () -> Unit, onOpenAbout: () -> Unit) {
@@ -36,6 +49,8 @@ fun ConverterScreen(vm: ConverterVM, onOpenHistory: () -> Unit, onOpenAbout: () 
     val input by vm.input.collectAsState()
     val to by vm.to.collectAsState()
     val ctx = LocalContext.current
+    var showUnsupportedError by remember { mutableStateOf(false) }
+    var errorFormat by remember { mutableStateOf<DocFormat?>(null) }
 
     val pickFile = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -46,6 +61,27 @@ fun ConverterScreen(vm: ConverterVM, onOpenHistory: () -> Unit, onOpenAbout: () 
             } catch (_: Throwable) {}
             vm.pickFile(uri)
         }
+    }
+
+    val supportedFormats = input?.from?.let { getSupportedOutputFormats(it) } ?: emptyList()
+    val isFormatSupported = supportedFormats.isNotEmpty()
+
+    // Показ диалога при загрузке неподдерживаемого формата
+    LaunchedEffect(input) {
+        if (input != null && !isFormatSupported) {
+            errorFormat = input?.from
+            showUnsupportedError = true
+        }
+    }
+
+    if (showUnsupportedError && errorFormat != null) {
+        UnsupportedFormatDialog(
+            format = errorFormat!!,
+            onDismiss = {
+                showUnsupportedError = false
+                vm.reset()
+            }
+        )
     }
 
     Scaffold(
@@ -85,64 +121,163 @@ fun ConverterScreen(vm: ConverterVM, onOpenHistory: () -> Unit, onOpenAbout: () 
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            PaperCard {
-                Dropzone(
-                    fileName = input?.sourceName,
-                    fileSize = input?.sourceSize,
-                    fmt = input?.from,
-                    onPick = { pickFile.launch(arrayOf(
-                        "application/msword",
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        "application/rtf",
-                        "application/vnd.oasis.opendocument.text",
-                        "text/plain",
-                        "text/html",
-                        "text/markdown",
-                        "application/vnd.ms-excel",
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "application/pdf",
-                        "*/*",
-                    )) },
-                    onClear = { vm.reset() }
-                )
+            if (input == null || !isFormatSupported) {
+                // Экран 1: Приветствие и загрузка
+                PaperCard {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Spacer(Modifier.height(20.dp))
+                        Text("Добро пожаловать!",
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Загрузите документ для конвертации",
+                            color = Palette.inkMute, fontSize = 14.sp)
+                        Spacer(Modifier.height(32.dp))
 
-                Spacer(Modifier.height(12.dp))
-                Divider(color = Palette.ruleSoft)
-                Spacer(Modifier.height(12.dp))
+                        Dropzone(
+                            fileName = null,
+                            fileSize = null,
+                            fmt = null,
+                            onPick = {
+                                pickFile.launch(arrayOf(
+                                    "application/msword",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    "application/rtf",
+                                    "application/vnd.oasis.opendocument.text",
+                                    "text/plain",
+                                    "text/html",
+                                    "text/markdown",
+                                    "application/vnd.ms-excel",
+                                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    "application/pdf",
+                                    "*/*",
+                                ))
+                            },
+                            onClear = {}
+                        )
+                        Spacer(Modifier.height(20.dp))
+                    }
+                }
+            } else {
+                // Экран 2: Выбор формата после загрузки
+                PaperCard {
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Palette.ochreDeep),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Файл загружен",
+                                    fontFamily = FontFamily.Serif,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold)
+                                Text(input!!.sourceName, color = Palette.inkMute, fontSize = 12.sp, maxLines = 1)
+                            }
+                            TextButton(onClick = { vm.reset() }) {
+                                Icon(Icons.Default.Close, null, modifier = Modifier.size(20.dp))
+                            }
+                        }
 
-                Text("В ФОРМАТ", style = MaterialTheme.typography.labelSmall, color = Palette.inkMute)
-                Spacer(Modifier.height(6.dp))
-                FormatGrid(
-                    formats = DocFormat.writable,
-                    selected = to,
-                    disabled = input?.from,
-                    onPick = { vm.setTo(it) }
-                )
+                        Spacer(Modifier.height(16.dp))
+                        HorizontalDivider(color = Palette.ruleSoft)
+                        Spacer(Modifier.height(16.dp))
 
-                Spacer(Modifier.height(16.dp))
-                Divider(color = Palette.ruleSoft)
-                Spacer(Modifier.height(12.dp))
+                        Text("КОНВЕРТИРОВАТЬ В", style = MaterialTheme.typography.labelSmall, color = Palette.inkMute)
+                        Spacer(Modifier.height(8.dp))
+                        FormatGrid(
+                            formats = supportedFormats,
+                            selected = to,
+                            disabled = null,
+                            onPick = { vm.setTo(it) }
+                        )
 
-                ActionRow(
-                    state = state,
-                    inputReady = input != null && input?.from != to,
-                    onStart = { vm.start() },
-                    onReset = { vm.reset() },
-                    onOpenWith = { uri, mime -> Sharing.openWith(ctx, uri, mime) },
-                    onOpenInReader = { uri, mime -> Sharing.openInReader(ctx, uri, mime) },
-                    onShare = { uri, mime -> Sharing.share(ctx, uri, mime) },
-                )
-            }
+                        Spacer(Modifier.height(16.dp))
+                        HorizontalDivider(color = Palette.ruleSoft)
+                        Spacer(Modifier.height(12.dp))
 
-            // Подсказка про читалку
-            if (input != null) {
-                ReaderHint(ctx = ctx)
+                        ActionRow(
+                            state = state,
+                            inputReady = input != null && input?.from != to,
+                            onStart = { vm.start() },
+                            onReset = { vm.reset() },
+                            onOpenWith = { uri, mime -> Sharing.openWith(ctx, uri, mime) },
+                            onOpenInReader = { uri, mime -> Sharing.openInReader(ctx, uri, mime) },
+                            onShare = { uri, mime -> Sharing.share(ctx, uri, mime) },
+                        )
+                    }
+                }
             }
 
             FooterBadge()
             Spacer(Modifier.height(40.dp))
         }
     }
+}
+
+@Composable
+fun UnsupportedFormatDialog(format: DocFormat, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.ErrorOutline, null, tint = Palette.stamp, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(12.dp))
+                Text("Формат не поддерживается",
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold)
+            }
+        },
+        text = {
+            Column {
+                Text("Файл: ${format.displayName}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Palette.ink)
+                Spacer(Modifier.height(8.dp))
+                Text("К сожалению, этот формат нельзя конвертировать в поддерживаемые форматы.",
+                    fontSize = 14.sp,
+                    color = Palette.inkMute)
+                Spacer(Modifier.height(16.dp))
+                Text("Поддерживаемые форматы:",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Palette.inkSoft)
+                Spacer(Modifier.height(4.dp))
+                Text("Word (DOCX, DOC, RTF, ODT), PDF, TXT, HTML, MD, Excel (XLS, XLSX)",
+                    fontSize = 13.sp,
+                    color = Palette.ink)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Palette.ink,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Выбрать другой файл")
+            }
+        },
+        containerColor = Palette.paper,
+        textContentColor = Palette.ink,
+        titleContentColor = Palette.ink
+    )
 }
 
 @Composable
@@ -177,7 +312,9 @@ private fun Dropzone(
     ) {
         if (fileName == null) {
             Column(
-                modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
@@ -201,91 +338,31 @@ private fun Dropzone(
             }
         } else {
             Row(
-                modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(14.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FormatBadge(fmt ?: DocFormat.DOCX, big = true)
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(formatColor(fmt!!)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(fmt.ext.uppercase(),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White)
+                }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(fileName,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp,
-                        maxLines = 1)
-                    Text(
-                        listOfNotNull(
-                            fileSize?.let { humanSize(it) },
-                            fmt?.displayName
-                        ).joinToString(" · "),
-                        color = Palette.inkMute,
-                        fontSize = 12.sp
-                    )
+                    Text(fileName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(humanSize(fileSize ?: 0), color = Palette.inkMute, fontSize = 12.sp)
                 }
-                IconButton(onClick = onClear) {
-                    Icon(Icons.Default.Close, contentDescription = "Удалить")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FormatBadge(fmt: DocFormat, big: Boolean = false) {
-    val color = formatColor(fmt)
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(color)
-            .padding(horizontal = if (big) 8.dp else 6.dp, vertical = if (big) 6.dp else 3.dp)
-    ) {
-        Text(
-            fmt.ext.uppercase(),
-            color = Color.White,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = if (big) 13.sp else 10.sp,
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FormatGrid(
-    formats: List<DocFormat>,
-    selected: DocFormat,
-    disabled: DocFormat?,
-    onPick: (DocFormat) -> Unit,
-) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        formats.forEach { f ->
-            val isDisabled = f == disabled
-            val isSelected = f == selected && !isDisabled
-            Surface(
-                color = if (isSelected) Palette.ink else Palette.paper2,
-                contentColor = if (isSelected) Color.White else Palette.ink,
-                shape = RoundedCornerShape(20.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp, if (isSelected) Palette.ink else Palette.rule
-                ),
-                modifier = Modifier
-                    .clickable(enabled = !isDisabled) { onPick(f) }
-                    .alpha(if (isDisabled) 0.35f else 1f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(formatColor(f))
-                    )
-                    Text(f.ext.uppercase(),
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp)
+                IconButton(onClick = onClear, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Close, null, tint = Palette.inkMute, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -335,7 +412,10 @@ private fun ActionRow(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).background(Palette.moss),
+                        Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Palette.moss),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -419,47 +499,12 @@ private fun ProgressView(label: String, pct: Int) {
         Spacer(Modifier.height(8.dp))
         LinearProgressIndicator(
             progress = { pct / 100f },
-            modifier = Modifier.fillMaxWidth().height(6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
             color = Palette.ochreDeep,
             trackColor = Palette.paper2,
         )
-    }
-}
-
-@Composable
-private fun ReaderHint(ctx: android.content.Context) {
-    val installed = remember { Sharing.isReaderInstalled(ctx) != null }
-    Surface(
-        color = Palette.paper2,
-        shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Palette.ruleSoft),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.MenuBook, null, tint = Palette.ochreDeep)
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    if (installed) "Открывайте результат в OfficeDesk Читалке"
-                    else "Хотите читать удобно? Установите OfficeDesk Читалку",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp
-                )
-                Text(
-                    if (installed) "Кнопка «В читалке» появится после конвертации"
-                    else "Совместима с PDF и TXT",
-                    color = Palette.inkMute, fontSize = 12.sp
-                )
-            }
-            if (!installed) {
-                TextButton(onClick = { Sharing.suggestInstallReader(ctx) }) {
-                    Text("Установить")
-                }
-            }
-        }
     }
 }
 
